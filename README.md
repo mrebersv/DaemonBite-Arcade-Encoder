@@ -1,3 +1,13 @@
+# Noteworthy changes in this fork
+* Enabled pin 5 (PC6) on the pro micro
+* Added "Turbo" button functionality
+* Pin 5 (PC6) is used to set/unset turbo for a given button
+  - Hold down your Turbo configure button and press the key you'd like to set/unset Turbo on to toggle
+
+**SUPPORT MICKGUYVER/DAEMONBITE BY BUYING ONE OF HIS CONTROLLERS!!!!**
+
+**EVERYTHING BELOW THIS POINT IS CLONED FROM THE OG DAEMONBITE REPO**
+
 # DaemonBite-Arcade-Encoder
 This is an arcade controller project for the MiSTer FPGA project and any other device accepting USB HID joysticks using an Arduino Pro Micro. This project can also be used to create a NeoGeo/Atari/Commodore/Amiga controller to USB adapters.
 
