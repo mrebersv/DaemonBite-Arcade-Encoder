@@ -6,7 +6,7 @@
 
 **SUPPORT MICKGUYVER/DAEMONBITE BY BUYING ONE OF HIS CONTROLLERS!!!!**
 
-**EVERYTHING BELOW THIS POINT IS CLONED FROM THE OG DAEMONBIT REPO**
+**EVERYTHING BELOW THIS POINT IS CLONED FROM THE OG DAEMONBITE REPO**
 
 # DaemonBite-Arcade-Encoder
 This is an arcade controller project for the MiSTer FPGA project and any other device accepting USB HID joysticks using an Arduino Pro Micro. This project can also be used to create a NeoGeo/Atari/Commodore/Amiga controller to USB adapters.
