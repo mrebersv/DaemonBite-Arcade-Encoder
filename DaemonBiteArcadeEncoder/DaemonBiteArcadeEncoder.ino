@@ -56,9 +56,9 @@ uint32_t axesMillis[4];
 uint16_t buttonsDirect = 0;
 uint16_t buttons = 0;
 uint16_t buttonsPrev = 0;
-uint16_t buttonsBits[12] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800};
-uint32_t buttonsMillis[12];
-
+uint16_t buttonsBits[13] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800, 0x1000};
+uint32_t buttonsMillis[13];
+uint16_t buttonsTurbo[12]; // Button 13 sets/unsets turbo status, so only need the first 12 buttons
 #ifdef DEBUG
 char buf[16];
 uint32_t millisSent = 0;
@@ -75,6 +75,8 @@ void setup()
   PORTD |= B10011111; // Enable internal pull-up resistors
   DDRB &= ~B01111110; // Set PB1-PB6 as inputs
   PORTB |= B01111110; // Enable internal pull-up resistors
+  DDRC &= ~B01000000; // Set PC6 as input
+  PORTC |= B01000000; // Enable internal pull-up resistors
 
   // Debounce selector switch (currently disabled)
   DDRE &= ~B01000000; // Pin 7 as input
@@ -83,7 +85,7 @@ void setup()
   // Initialize debouncing timestamps
   for (pin = 0; pin < 4; pin++)
     axesMillis[pin] = 0;
-  for (pin = 0; pin < 12; pin++)
+  for (pin = 0; pin < 13; pin++)
     buttonsMillis[pin] = 0;
 
   Gamepad.reset();
@@ -105,7 +107,7 @@ void loop()
   {
     // Read axis and button inputs (bitwise NOT results in a 1 when button/axis pressed)
     axesDirect = ~(PINF & B11110000);
-    buttonsDirect = ~((PIND & B00011111) | ((PIND & B10000000) << 4) | ((PINB & B01111110) << 4));
+    buttonsDirect = ~((PIND & B00011111) | ((PIND & B10000000) << 4) | ((PINB & B01111110) << 4) | ((PINC & B01000000) <<6));
 
     if (debounce)
     {
@@ -130,7 +132,7 @@ void loop()
       }
 
       // Debounce buttons
-      for (pin = 0; pin < 12; pin++)
+      for (pin = 0; pin < 13; pin++)
       {
         // Credit:  bootsector for the input overflow logic
         // Sanitize millisNow in case of overflow (after around 50 days, but it can happen! :-)
@@ -146,6 +148,15 @@ void loop()
           buttons ^= buttonsBits[pin];
           // Update the timestamp for the pin
           buttonsMillis[pin] = millisNow;
+        }
+      }
+
+      // Turbo - added by mrebersv
+      for (pin = 0; pin < 12; pin++) {
+        if (buttonsTurbo[pin] && buttonsBits[pin]) { // if turbo is set for a button AND the button is pressed
+          buttonsBits[pin] = 0;
+          delay(DEBOUNCE_TIME); // delay for the debounce time
+          buttonsBits[pin] = 1;
         }
       }
     }
@@ -196,6 +207,15 @@ void loop()
       usbUpdate = true;
     }
 
+    // Set the turbo status if the turbo config button is set AND another button is pressed
+    // added by mrebersv
+    if (buttonsBits[12]) // Is the turbo config button pressed?
+      for (pin = 0; pin < 12; pin++) { //Check every pin except the turbo config pin
+        if ((buttonsDirect & buttonsBits[pin]) != (buttons & buttonsBits[pin])) { // only toggle turbo if the button changed
+          buttonsTurbo[pin] ^= buttons; // Toggle the turbo status for that pin
+        }
+      }
+
     // Should gamepad data be sent to USB?
     if (usbUpdate)
     {
@@ -235,6 +255,7 @@ uint8_t dpad2hat(uint8_t dpad)
     socdX = 0b0000; // Resolves to Neutral
   }
 
+  // Credit:  fabricioanciaes for the fixed SOCD cleaning
   // cleanedInput is both SOCD results through a bitwise OR Gate
   cleanedInput = socdY | socdX;
 
