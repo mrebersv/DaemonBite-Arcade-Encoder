@@ -112,6 +112,7 @@ void loop()
       // Debounce axes
       for (pin = 0; pin < 4; pin++)
       {
+        // Credit:  bootsector for the input overflow logic
         // Sanitize millisNow in case of overflow (after around 50 days, but it can happen! :-)
         if (millisNow < axesMillis[pin])
         {
@@ -131,6 +132,7 @@ void loop()
       // Debounce buttons
       for (pin = 0; pin < 12; pin++)
       {
+        // Credit:  bootsector for the input overflow logic
         // Sanitize millisNow in case of overflow (after around 50 days, but it can happen! :-)
         if (millisNow < buttonsMillis[pin])
         {
@@ -213,6 +215,7 @@ void loop()
 
 uint8_t dpad2hat(uint8_t dpad)
 {
+  // Credit:  fabricioanciaes for the fixed SOCD cleaning
   // cleanedInput will hold the inputs after SOCD Cleaning
   uint8_t cleanedInput;
 
