@@ -59,6 +59,7 @@ uint16_t buttonsPrev = 0;
 uint16_t buttonsBits[13] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800, 0x1000};
 uint32_t buttonsMillis[13];
 uint16_t buttonsTurbo[12]; // Button 13 sets/unsets turbo status, so only need the first 12 buttons
+uint16_t turboMillis[12];
 #ifdef DEBUG
 char buf[16];
 uint32_t millisSent = 0;
@@ -85,8 +86,10 @@ void setup()
   // Initialize debouncing timestamps
   for (pin = 0; pin < 4; pin++)
     axesMillis[pin] = 0;
-  for (pin = 0; pin < 13; pin++)
+  for (pin = 0; pin < 13; pin++) {
     buttonsMillis[pin] = 0;
+    turboMillis[pin] = 0;
+  }
 
   Gamepad.reset();
 
@@ -162,8 +165,9 @@ void loop()
     // There's a faster way to structure this, but with a max 1000 Hz polling interval for USB, the extra delay is
     // inconsequential and worth the increased readability in this code.  Not that it's super readable, but still.
     for (pin = 0; pin < 12; pin++) {
-      if (buttonsTurbo[pin] && buttonsBits[pin]) { // if turbo is set for a button AND the button is pressed
+      if (buttonsTurbo[pin] && buttonsBits[pin] && (millisNow - turboMillis[pin]) < 500) { // if turbo is set for a button, a button is pressed, and it wasn't set/unset in the last 0.5s
         buttonsBits[pin] = 0;
+        turboMillis[pin] = millisNow;
         // delay(10); // If you're not using debounce, uncomment this line <-----
         // If debounce is being used, the "fire rate" of turbo will be approximately 1000 / DEBOUNCE_TIME per second
         // e.g. If DEBOUNCE_TIME is 10, the fire rate is ~100/second.  If DEBOUNCE_TIME is 20, the fire rate is ~50/sec
