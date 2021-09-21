@@ -165,9 +165,8 @@ void loop()
     // There's a faster way to structure this, but with a max 1000 Hz polling interval for USB, the extra delay is
     // inconsequential and worth the increased readability in this code.  Not that it's super readable, but still.
     for (pin = 0; pin < 12; pin++) {
-      if (buttonsTurbo[pin] && buttonsBits[pin] && (millisNow - turboMillis[pin]) < 500) { // if turbo is set for a button, a button is pressed, and it wasn't set/unset in the last 0.5s
+      if (buttonsTurbo[pin] && buttonsBits[pin]) { // if turbo is set for a button, a button is pressed
         buttonsBits[pin] = 0;
-        turboMillis[pin] = millisNow;
         // delay(10); // If you're not using debounce, uncomment this line <-----
         // If debounce is being used, the "fire rate" of turbo will be approximately 1000 / DEBOUNCE_TIME per second
         // e.g. If DEBOUNCE_TIME is 10, the fire rate is ~100/second.  If DEBOUNCE_TIME is 20, the fire rate is ~50/sec
@@ -216,12 +215,13 @@ void loop()
       usbUpdate = true;
     }
 
-    // Set the turbo status if the turbo config button is set AND another button is pressed
+    // Set the turbo status if the turbo config button is set, another button is pressed, and that button wasn't set/unset in the last 1/2 second
     // added by mrebersv
     if (buttonsBits[12]) // Is the turbo config button pressed?
       for (pin = 0; pin < 12; pin++) { //Check every pin except the turbo config pin
-        if ((buttonsDirect & buttonsBits[pin]) != (buttons & buttonsBits[pin])) { // only toggle turbo if the button changed
+        if ((buttonsDirect & buttonsBits[pin]) != (buttons & buttonsBits[pin]) && (millisNow - turboMillis[pin]) < 500) { // only toggle turbo if the button changed greater than 500ms ago
           buttonsTurbo[pin] ^= buttons; // Toggle the turbo status for that pin
+          turboMillis[pin] = millisNow;
         }
       }
 
