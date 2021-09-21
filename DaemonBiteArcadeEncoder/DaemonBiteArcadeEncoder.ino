@@ -23,7 +23,7 @@
 
 #include "Gamepad.h"
 
-#define PS3 // PS3 (ScpToolkit) compatibility (Comment out for joystick=X/Y-Axis and B11/B12 as normal buttons)
+// #define PS3 // PS3 (ScpToolkit) compatibility (Comment out for joystick=X/Y-Axis and B11/B12 as normal buttons)
 // #define NEOGEO
 
 #define DEBOUNCE 1       // 1=Diddly-squat-Delay-Debouncing™ activated, 0=Debounce deactivated
@@ -132,7 +132,7 @@ void loop()
       }
 
       // Debounce buttons
-      for (pin = 0; pin < 13; pin++)
+      for (pin = 0; pin < 12; pin++)
       {
         // Credit:  bootsector for the input overflow logic
         // Sanitize millisNow in case of overflow (after around 50 days, but it can happen! :-)
@@ -151,19 +151,24 @@ void loop()
         }
       }
 
-      // Turbo - added by mrebersv
-      for (pin = 0; pin < 12; pin++) {
-        if (buttonsTurbo[pin] && buttonsBits[pin]) { // if turbo is set for a button AND the button is pressed
-          buttonsBits[pin] = 0;
-          delay(DEBOUNCE_TIME); // delay for the debounce time
-          buttonsBits[pin] = 1;
-        }
-      }
     }
     else
     {
       axes = axesDirect;
       buttons = buttonsDirect;
+    }
+
+    // Turbo - added by mrebersv
+    // There's a faster way to structure this, but with a max 1000 Hz polling interval for USB, the extra delay is
+    // inconsequential and worth the increased readability in this code.  Not that it's super readable, but still.
+    for (pin = 0; pin < 12; pin++) {
+      if (buttonsTurbo[pin] && buttonsBits[pin]) { // if turbo is set for a button AND the button is pressed
+        buttonsBits[pin] = 0;
+        // delay(10); // If you're not using debounce, uncomment this line <-----
+        // If debounce is being used, the "fire rate" of turbo will be approximately 1000 / DEBOUNCE_TIME per second
+        // e.g. If DEBOUNCE_TIME is 10, the fire rate is ~100/second.  If DEBOUNCE_TIME is 20, the fire rate is ~50/sec
+        // Don't need to set the pin to 1 again as leaving it pressed will do that on the next main loop iteration
+      }
     }
 
     // Has axis inputs changed?
