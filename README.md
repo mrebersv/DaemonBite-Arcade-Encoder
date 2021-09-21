@@ -4,7 +4,7 @@
 * Pin 5 (PC6) is used to set/unset turbo for a given button
   - Hold down your Turbo configure button and press the key you'd like to set/unset Turbo on to toggle
 
-**SUPPORT DAEMONBITE BY BUYING ONE OF HIS CONTROLLERS!!!!**
+**SUPPORT MICKGUYVER/DAEMONBITE BY BUYING ONE OF HIS CONTROLLERS!!!!**
 
 **EVERYTHING BELOW THIS POINT IS CLONED FROM THE OG DAEMONBIT REPO**
 
