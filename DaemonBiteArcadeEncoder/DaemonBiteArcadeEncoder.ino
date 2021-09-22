@@ -26,8 +26,8 @@
 //#define PS3                 // PS3 (ScpToolkit) compatibility (Comment out for joystick=X/Y-Axis and B11/B12 as normal buttons)
 //#define NEOGEO
 
-#define DEBOUNCE 0          // 1=Diddly-squat-Delay-Debouncing™ activated, 0=Debounce deactivated
-#define DEBOUNCE_TIME 10    // Debounce time in milliseconds
+#define DEBOUNCE 1          // 1=Diddly-squat-Delay-Debouncing™ activated, 0=Debounce deactivated
+#define DEBOUNCE_TIME 20    // Debounce time in milliseconds
 //#define DEBUG             // Enables debugging (sends debug data to usb serial)
 
 #ifdef NEOGEO
@@ -111,7 +111,7 @@ void loop()
     // Read axis and button inputs (bitwise NOT results in a 1 when button/axis pressed)
     axesDirect = ~(PINF & B11110000);
     buttonsDirect = ~((PIND & B00011111) | ((PIND & B10000000) << 4) | ((PINB & B01111110) << 4) | ((PINE & B01000000) << 6));
-    Serial.println(buttonsDirect, BIN);
+
     if (debounce)
     {
       // Debounce axes
