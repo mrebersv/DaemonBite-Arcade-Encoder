@@ -1,7 +1,7 @@
 # Noteworthy changes in this fork
-* Enabled pin 5 (PC6) on the pro micro
+* Enabled pin 7 on the pro micro
 * Added "Turbo" button functionality
-* Pin 5 (PC6) is used to set/unset turbo for a given button
+* Pin 7 is used to set/unset turbo for a given button
   - Hold down your Turbo configure button and press the key you'd like to set/unset Turbo on to toggle
 
 **SUPPORT MICKGUYVER/DAEMONBITE BY BUYING ONE OF HIS CONTROLLERS!!!!**

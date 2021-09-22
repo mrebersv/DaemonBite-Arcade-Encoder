@@ -23,82 +23,82 @@
 
 #include "Gamepad.h"
 
-// #define PS3 // PS3 (ScpToolkit) compatibility (Comment out for joystick=X/Y-Axis and B11/B12 as normal buttons)
-// #define NEOGEO
+//#define PS3                 // PS3 (ScpToolkit) compatibility (Comment out for joystick=X/Y-Axis and B11/B12 as normal buttons)
+//#define NEOGEO
 
-#define DEBOUNCE 1       // 1=Diddly-squat-Delay-Debouncing™ activated, 0=Debounce deactivated
-#define DEBOUNCE_TIME 10 // Debounce time in milliseconds
+#define DEBOUNCE 0          // 1=Diddly-squat-Delay-Debouncing™ activated, 0=Debounce deactivated
+#define DEBOUNCE_TIME 10    // Debounce time in milliseconds
 //#define DEBUG             // Enables debugging (sends debug data to usb serial)
 
 #ifdef NEOGEO
-const char *gp_serial = "NeoGeo to USB";
+  const char *gp_serial = "NeoGeo to USB";
 #else
-const char *gp_serial = "Daemonbite Arcade";
+  const char *gp_serial = "Daemonbite Arcade";
 #endif
 
-#define UP 0x80
-#define DOWN 0x40
-#define LEFT 0x20
+#define UP    0x80
+#define DOWN  0x40
+#define LEFT  0x20
 #define RIGHT 0x10
 
-Gamepad_ Gamepad;         // Set up USB HID gamepad
-bool usbUpdate = true;    // Should gamepad data be sent to USB?
-bool debounce = DEBOUNCE; // Debounce?
-uint8_t pin;              // Used in for loops
-uint32_t millisNow = 0;   // Used for Diddly-squat-Delay-Debouncing™
+Gamepad_ Gamepad;           // Set up USB HID gamepad
+bool usbUpdate = false;     // Should gamepad data be sent to USB?
+bool debounce = DEBOUNCE;   // Debounce?
+uint8_t  pin;               // Used in for loops
+uint32_t millisNow = 0;     // Used for Diddly-squat-Delay-Debouncing™
 
-uint8_t axesDirect = 0x0f;
-uint8_t axes = 0x0f;
-uint8_t axesPrev = 0x0f;
-uint8_t axesBits[4] = {0x10, 0x20, 0x40, 0x80};
+
+uint8_t  axesDirect = 0x0f;
+uint8_t  axes = 0x0f;
+uint8_t  axesPrev = 0x0f;
+uint8_t  axesBits[4] = {0x10,0x20,0x40,0x80};
 uint32_t axesMillis[4];
 
 uint16_t buttonsDirect = 0;
 uint16_t buttons = 0;
 uint16_t buttonsPrev = 0;
-uint16_t buttonsBits[13] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400, 0x800, 0x1000};
-uint32_t buttonsMillis[13];
-uint16_t buttonsTurbo[12]; // Button 13 sets/unsets turbo status, so only need the first 12 buttons
+uint16_t buttonsBits[13] = {0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x100,0x200,0x400,0x800, 0x1000};
+uint32_t buttonsMillis[12];
+uint16_t buttonsTurbo = 0; // Button 13 sets/unsets turbo status, so only need the first 12 buttons
 uint16_t turboMillis[12];
+
 #ifdef DEBUG
-char buf[16];
-uint32_t millisSent = 0;
+  char buf[16];
+  uint32_t millisSent = 0;
 #endif
 
-void setup()
+void setup() 
 {
   // Axes
-  DDRF &= ~B11110000; // Set A0-A3 as inputs
-  PORTF |= B11110000; // Enable internal pull-up resistors
+  DDRF  &= ~B11110000; // Set A0-A3 as inputs
+  PORTF |=  B11110000; // Enable internal pull-up resistors
 
   // Buttons
-  DDRD &= ~B10011111; // Set PD0-PD4 and PD7 as inputs
-  PORTD |= B10011111; // Enable internal pull-up resistors
-  DDRB &= ~B01111110; // Set PB1-PB6 as inputs
-  PORTB |= B01111110; // Enable internal pull-up resistors
-  DDRC &= ~B01000000; // Set PC6 as input
-  PORTC |= B01000000; // Enable internal pull-up resistors
+  DDRD  &= ~B10011111; // Set PD0-PD4 and PD7 as inputs
+  PORTD |=  B10011111; // Enable internal pull-up resistors
+  DDRB  &= ~B01111110; // Set PB1-PB6 as inputs
+  PORTB |=  B01111110; // Enable internal pull-up resistors
 
   // Debounce selector switch (currently disabled)
-  DDRE &= ~B01000000; // Pin 7 as input
-  PORTE |= B01000000; // Enable internal pull-up resistor
+  DDRE  &= ~B01000000; // Pin 7 as input
+  PORTE |=  B01000000; // Enable internal pull-up resistor
 
   // Initialize debouncing timestamps
-  for (pin = 0; pin < 4; pin++)
-    axesMillis[pin] = 0;
-  for (pin = 0; pin < 13; pin++) {
-    buttonsMillis[pin] = 0;
-    turboMillis[pin] = 0;
+  for(pin=0; pin<4; pin++)
+    axesMillis[pin]=0;
+  for(pin=0; pin<12; pin++) {  
+    buttonsMillis[pin]=0;
+    turboMillis[pin]=millis();
   }
 
   Gamepad.reset();
 
-#ifdef DEBUG
-  Serial.begin(115200);
-#endif
+  #ifdef DEBUG
+    Serial.begin(115200);
+  #endif
 }
 
-void loop()
+void loop() 
 {
   // Get current time, the millis() function should take about 2µs to complete
   millisNow = millis();
@@ -110,8 +110,8 @@ void loop()
   {
     // Read axis and button inputs (bitwise NOT results in a 1 when button/axis pressed)
     axesDirect = ~(PINF & B11110000);
-    buttonsDirect = ~((PIND & B00011111) | ((PIND & B10000000) << 4) | ((PINB & B01111110) << 4) | ((PINC & B01000000) <<6));
-
+    buttonsDirect = ~((PIND & B00011111) | ((PIND & B10000000) << 4) | ((PINB & B01111110) << 4) | ((PINE & B01000000) << 6));
+    Serial.println(buttonsDirect, BIN);
     if (debounce)
     {
       // Debounce axes
@@ -160,22 +160,29 @@ void loop()
       axes = axesDirect;
       buttons = buttonsDirect;
     }
-
+    
     // Turbo - added by mrebersv
     // There's a faster way to structure this, but with a max 1000 Hz polling interval for USB, the extra delay is
     // inconsequential and worth the increased readability in this code.  Not that it's super readable, but still.
     for (pin = 0; pin < 12; pin++) {
-      if (buttonsTurbo[pin] && buttonsBits[pin]) { // if turbo is set for a button, a button is pressed
-        buttonsBits[pin] = 0;
-        // delay(10); // If you're not using debounce, uncomment this line <-----
-        // If debounce is being used, the "fire rate" of turbo will be approximately 1000 / DEBOUNCE_TIME per second
-        // e.g. If DEBOUNCE_TIME is 10, the fire rate is ~100/second.  If DEBOUNCE_TIME is 20, the fire rate is ~50/sec
-        // Don't need to set the pin to 1 again as leaving it pressed will do that on the next main loop iteration
+      if ((buttonsTurbo & buttonsBits[pin]) && (buttonsDirect & buttonsBits[pin]) 
+        && ((millisNow - buttonsMillis[pin]) > DEBOUNCE_TIME) && ((buttonsDirect & buttonsBits[pin]) == (buttonsPrev & buttonsBits[pin]))) { // if turbo is set for a button, a button is pressed
+        buttons ^= buttonsBits[pin];
       }
     }
 
+    // Set the turbo status if the turbo config button is set, another button is pressed, and that button wasn't set/unset in the last 1/2 second
+    // added by mrebersv
+    if (buttonsDirect & buttonsBits[12]) // Is the turbo config button pressed?
+      for (pin = 0; pin < 12; pin++) { //Check every pin except the turbo config pin
+        if ((buttonsDirect & buttonsBits[pin]) && (millisNow - turboMillis[pin]) > 500) { // only toggle turbo if the button changed greater than 500ms ago
+          buttonsTurbo ^= buttonsBits[pin]; // Toggle the turbo status for that pin
+          turboMillis[pin] = millisNow;
+        }
+      }
+  
     // Has axis inputs changed?
-    if (axes != axesPrev)
+    if(axes != axesPrev)
     {
 #ifdef PS3
       Gamepad._GamepadReport.hat = dpad2hat(axes);
@@ -214,16 +221,6 @@ void loop()
       buttonsPrev = buttons;
       usbUpdate = true;
     }
-
-    // Set the turbo status if the turbo config button is set, another button is pressed, and that button wasn't set/unset in the last 1/2 second
-    // added by mrebersv
-    if (buttonsBits[12]) // Is the turbo config button pressed?
-      for (pin = 0; pin < 12; pin++) { //Check every pin except the turbo config pin
-        if ((buttonsDirect & buttonsBits[pin]) != (buttons & buttonsBits[pin]) && (millisNow - turboMillis[pin]) > 500) { // only toggle turbo if the button changed greater than 500ms ago
-          buttonsTurbo[pin] ^= buttons; // Toggle the turbo status for that pin
-          turboMillis[pin] = millisNow;
-        }
-      }
 
     // Should gamepad data be sent to USB?
     if (usbUpdate)
