@@ -219,7 +219,7 @@ void loop()
     // added by mrebersv
     if (buttonsBits[12]) // Is the turbo config button pressed?
       for (pin = 0; pin < 12; pin++) { //Check every pin except the turbo config pin
-        if ((buttonsDirect & buttonsBits[pin]) != (buttons & buttonsBits[pin]) && (millisNow - turboMillis[pin]) < 500) { // only toggle turbo if the button changed greater than 500ms ago
+        if ((buttonsDirect & buttonsBits[pin]) != (buttons & buttonsBits[pin]) && (millisNow - turboMillis[pin]) > 500) { // only toggle turbo if the button changed greater than 500ms ago
           buttonsTurbo[pin] ^= buttons; // Toggle the turbo status for that pin
           turboMillis[pin] = millisNow;
         }
