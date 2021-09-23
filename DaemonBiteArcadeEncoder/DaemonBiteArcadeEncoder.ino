@@ -234,7 +234,7 @@ void loop()
         sprintf(buf, "%06lu: %d%d%d%d", millisNow-millisSent, ((axes & 0x10)>>4), ((axes & 0x20)>>5), ((axes & 0x40)>>6), ((axes & 0x80)>>7) );
         Serial.print(buf);
         sprintf(buf, " %d%d%d%d", (buttons & 0x01), ((buttons & 0x02)>>1), ((buttons & 0x04)>>2), ((buttons & 0x08)>>3) );
-      {}  Serial.println(buf);
+        Serial.println(buf);
         millisSent = millisNow;
       #endif
     }
