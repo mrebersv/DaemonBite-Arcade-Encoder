@@ -26,7 +26,7 @@
 //#define PS3                 // PS3 (ScpToolkit) compatibility (Comment out for joystick=X/Y-Axis and B11/B12 as normal buttons)
 //#define NEOGEO
 
-#define DEBOUNCE 1          // 1=Diddly-squat-Delay-Debouncing™ activated, 0=Debounce deactivated
+#define DEBOUNCE 0          // 1=Diddly-squat-Delay-Debouncing™ activated, 0=Debounce deactivated
 #define DEBOUNCE_TIME 20    // Debounce time in milliseconds
 //#define DEBUG             // Enables debugging (sends debug data to usb serial)
 
@@ -149,8 +149,9 @@ void loop()
         {
           // Toggle the pin, we can safely do this because we know the current state is different to the stored state
           buttons ^= buttonsBits[pin];
-          // Update the timestamp for the pin
-          buttonsMillis[pin] = millisNow;
+          // Update the timestamp for the pin unless turbo is set; then do it later
+          if (!(buttonsTurbo & buttonsBits[pin]))
+            buttonsMillis[pin] = millisNow;
         }
       }
 
@@ -166,11 +167,11 @@ void loop()
     // inconsequential and worth the increased readability in this code.  Not that it's super readable, but still.
     for (pin = 0; pin < 12; pin++) {
       if ((buttonsTurbo & buttonsBits[pin]) && (buttonsDirect & buttonsBits[pin]) 
-        && ((millisNow - buttonsMillis[pin]) > DEBOUNCE_TIME) && ((buttonsDirect & buttonsBits[pin]) == (buttonsPrev & buttonsBits[pin]))) { // if turbo is set for a button, a button is pressed
+        && ((millisNow - buttonsMillis[pin]) >= DEBOUNCE_TIME -2 ) && ((buttonsDirect & buttonsBits[pin]) == (buttonsPrev & buttonsBits[pin]))) { // if turbo is set for a button, a button is pressed
         buttons ^= buttonsBits[pin];
       }
     }
-
+    Serial.println(buttons, BIN);
     // Set the turbo status if the turbo config button is set, another button is pressed, and that button wasn't set/unset in the last 1/2 second
     // added by mrebersv
     if (buttonsDirect & buttonsBits[12]) // Is the turbo config button pressed?
@@ -178,63 +179,64 @@ void loop()
         if ((buttonsDirect & buttonsBits[pin]) && (millisNow - turboMillis[pin]) > 500) { // only toggle turbo if the button changed greater than 500ms ago
           buttonsTurbo ^= buttonsBits[pin]; // Toggle the turbo status for that pin
           turboMillis[pin] = millisNow;
+          buttonsMillis[pin] = millisNow;
         }
       }
   
     // Has axis inputs changed?
     if(axes != axesPrev)
     {
-#ifdef PS3
-      Gamepad._GamepadReport.hat = dpad2hat(axes);
-#else
-      // UP + DOWN = UP, SOCD (Simultaneous Opposite Cardinal Directions) Cleaner
-      if (axes & B10000000)
-        Gamepad._GamepadReport.Y = -1;
-      else if (axes & B01000000)
-        Gamepad._GamepadReport.Y = 1;
-      else
-        Gamepad._GamepadReport.Y = 0;
-      // UP + DOWN = NEUTRAL
-      //Gamepad._GamepadReport.Y = ((axes & B01000000)>>6) - ((axes & B10000000)>>7);
-      // LEFT + RIGHT = NEUTRAL
-      Gamepad._GamepadReport.X = ((axes & B00010000) >> 4) - ((axes & B00100000) >> 5);
-#endif
+      #ifdef PS3
+        Gamepad._GamepadReport.hat = dpad2hat(axes);
+      #else
+        // UP + DOWN = UP, SOCD (Simultaneous Opposite Cardinal Directions) Cleaner
+        if(axes & B10000000)
+          Gamepad._GamepadReport.Y = -1;
+        else if(axes & B01000000)
+          Gamepad._GamepadReport.Y = 1;
+        else
+          Gamepad._GamepadReport.Y = 0;
+        // UP + DOWN = NEUTRAL
+        //Gamepad._GamepadReport.Y = ((axes & B01000000)>>6) - ((axes & B10000000)>>7);
+        // LEFT + RIGHT = NEUTRAL
+        Gamepad._GamepadReport.X = ((axes & B00010000)>>4) - ((axes & B00100000)>>5);
+      #endif
       axesPrev = axes;
       usbUpdate = true;
     }
-
+  
     // Has button inputs changed?
-    if (buttons != buttonsPrev)
+    if(buttons != buttonsPrev)
     {
-#ifndef PS3
-      Gamepad._GamepadReport.buttons = buttons & 0x3FF;
-      if (buttons & 0x400) // B11
-        Gamepad._GamepadReport.Z = -1;
-      else if (buttons & 0x800) // B12
-        Gamepad._GamepadReport.Z = 1;
-      else
-        Gamepad._GamepadReport.Z = 0;
-#else
-      Gamepad._GamepadReport.buttons = buttons;
-#endif
+      #ifdef PS3
+        Gamepad._GamepadReport.buttons = buttons & 0x3FF;
+        if(buttons & 0x400) // B11
+          Gamepad._GamepadReport.Z = -1;
+        else if(buttons & 0x800) // B12
+          Gamepad._GamepadReport.Z = 1;
+        else
+          Gamepad._GamepadReport.Z = 0;
+      #else
+        Gamepad._GamepadReport.buttons = buttons;
+      #endif
 
       buttonsPrev = buttons;
       usbUpdate = true;
     }
 
     // Should gamepad data be sent to USB?
-    if (usbUpdate)
+    if(usbUpdate)
     {
       Gamepad.send();
       usbUpdate = false;
 
-#ifdef DEBUG
-      sprintf(buf, "%06lu: %d%d%d%d", millisNow - millisSent, ((axes & 0x10) >> 4), ((axes & 0x20) >> 5), ((axes & 0x40) >> 6), ((axes & 0x80) >> 7));
-      Serial.print(buf);
-      sprintf(buf, " %d%d%d%d", (buttons & 0x01), ((buttons & 0x02) >> 1), ((buttons & 0x04) >> 2), ((buttons & 0x08) >> 3));
-      Serial.println(buf);
-      millisSent = millisNow;
-#endif
+      #ifdef DEBUG
+        sprintf(buf, "%06lu: %d%d%d%d", millisNow-millisSent, ((axes & 0x10)>>4), ((axes & 0x20)>>5), ((axes & 0x40)>>6), ((axes & 0x80)>>7) );
+        Serial.print(buf);
+        sprintf(buf, " %d%d%d%d", (buttons & 0x01), ((buttons & 0x02)>>1), ((buttons & 0x04)>>2), ((buttons & 0x08)>>3) );
+      {}  Serial.println(buf);
+        millisSent = millisNow;
+      #endif
     }
   }
 }
@@ -267,25 +269,16 @@ uint8_t dpad2hat(uint8_t dpad)
 
   // Normalizing cleanedInput to the same format expected from dpad (0x80 -> 0x8F)
   // num * base + (base-1), we are working with base16 here (HEX), this will add a F to the end
-  switch ((cleanedInput * 16 + (16 - 1)) & (UP | DOWN | LEFT | RIGHT))
+  switch(dpad & (UP|DOWN|LEFT|RIGHT))
   {
-  case UP:
-    return 0;
-  case UP | RIGHT:
-    return 1;
-  case RIGHT:
-    return 2;
-  case DOWN | RIGHT:
-    return 3;
-  case DOWN:
-    return 4;
-  case DOWN | LEFT:
-    return 5;
-  case LEFT:
-    return 6;
-  case UP | LEFT:
-    return 7;
+    case UP:         return 0;
+    case UP|RIGHT:   return 1;
+    case RIGHT:      return 2;
+    case DOWN|RIGHT: return 3;
+    case DOWN:       return 4;
+    case DOWN|LEFT:  return 5;
+    case LEFT:       return 6;
+    case UP|LEFT:    return 7;
   }
-
   return 15;
 }
