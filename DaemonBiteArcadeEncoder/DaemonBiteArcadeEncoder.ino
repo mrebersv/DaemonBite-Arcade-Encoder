@@ -26,7 +26,7 @@
 //#define PS3                 // PS3 (ScpToolkit) compatibility (Comment out for joystick=X/Y-Axis and B11/B12 as normal buttons)
 //#define NEOGEO
 
-#define DEBOUNCE 0          // 1=Diddly-squat-Delay-Debouncing™ activated, 0=Debounce deactivated
+#define DEBOUNCE 1          // 1=Diddly-squat-Delay-Debouncing™ activated, 0=Debounce deactivated
 #define DEBOUNCE_TIME 20    // Debounce time in milliseconds
 //#define DEBUG             // Enables debugging (sends debug data to usb serial)
 
@@ -167,11 +167,11 @@ void loop()
     // inconsequential and worth the increased readability in this code.  Not that it's super readable, but still.
     for (pin = 0; pin < 12; pin++) {
       if ((buttonsTurbo & buttonsBits[pin]) && (buttonsDirect & buttonsBits[pin]) 
-        && ((millisNow - buttonsMillis[pin]) >= DEBOUNCE_TIME -2 ) && ((buttonsDirect & buttonsBits[pin]) == (buttonsPrev & buttonsBits[pin]))) { // if turbo is set for a button, a button is pressed
+        && ((millisNow - buttonsMillis[pin]) >= DEBOUNCE_TIME) && ((buttonsDirect & buttonsBits[pin]) == (buttonsPrev & buttonsBits[pin]))) { // if turbo is set for a button, a button is pressed
         buttons ^= buttonsBits[pin];
       }
     }
-    Serial.println(buttons, BIN);
+
     // Set the turbo status if the turbo config button is set, another button is pressed, and that button wasn't set/unset in the last 1/2 second
     // added by mrebersv
     if (buttonsDirect & buttonsBits[12]) // Is the turbo config button pressed?
